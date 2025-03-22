@@ -15,6 +15,27 @@ services:
     networks:
       - mynetwork
 
+  menu_service:
+    build: ./menu_service
+    ports:
+      - "8003:8003"
+    networks:
+      - mynetwork
+
+  payments_service:
+    build: ./payments_service
+    ports:
+      - "8004:8004"
+    networks:
+      - mynetwork
+
+  invoices_service:
+    build: ./invoices_service
+    ports:
+      - "8005:8005"
+    networks:
+      - mynetwork
+
 networks:
   mynetwork:
     driver: bridge
