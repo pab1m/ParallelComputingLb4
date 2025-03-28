@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invoices-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: invoices-service
+  template:
+    metadata:
+      labels:
+        app: invoices-service
+    spec:
+      containers:
+      - name: invoices-service
+        image: invoices_service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8005
+        env:
+        - name: REDIS_HOST
+          value: "redis"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: invoices-service
+spec:
+  selector:
+    app: invoices-service
+  ports:
+    - protocol: TCP
+      port: 8005
+      targetPort: 8005

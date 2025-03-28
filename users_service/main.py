@@ -1,8 +1,13 @@
+import json
+import redis
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 
 app = FastAPI()
+
+# Підключення до Redis
+redis_client = redis.Redis(host="redis", port=6379, decode_responses=True)
 
 
 class UserCreate(BaseModel):
@@ -19,12 +24,17 @@ users = []
 @app.post("/users")
 def create_user(user: UserCreate):
     users.append(user.dict())
-    print(user.dict())
+    redis_client.set("users", json.dumps(users))
+    assert redis_client.get("users") is not None  # Переконуємося, що кеш оновився
     return user
 
 
 @app.get("/users")
 def get_users():
+    cached_users = redis_client.get("users")
+    if cached_users:
+        return json.loads(cached_users)
+    redis_client.setex("users", 60, json.dumps(users))  # Кешуємо меню на 60 секунд
     return users
 
 

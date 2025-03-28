@@ -1,3 +1,5 @@
+import json
+import redis
 import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -7,6 +9,9 @@ app = FastAPI()
 
 ORDERS_SERVICE_URL = "http://orders_service:8002/orders"
 MENU_SERVICE_URL = "http://menu_service:8003/menu"
+
+# Підключення до Redis
+redis_client = redis.Redis(host="redis", port=6379, decode_responses=True)
 
 
 class InvoiceCreate(BaseModel):
@@ -21,6 +26,10 @@ invoices = []
 
 @app.get("/invoices")
 def get_invoice():
+    cached_invoice = redis_client.get("invoices")
+    if cached_invoice:
+        return json.loads(cached_invoice)
+    redis_client.setex("invoices", 60, json.dumps(invoices))  # Кешуємо меню на 60 секунд
     return invoices
 
 
@@ -55,4 +64,5 @@ def create_invoice(order_id: int):
     # Створюємо нову накладну
     new_invoice = InvoiceCreate(id=len(invoices) + 1, order_id=order_id, amount=total_price, is_paid=False)
     invoices.append(new_invoice)
+    redis_client.set("invoices", json.dumps(invoices))
     return new_invoice
